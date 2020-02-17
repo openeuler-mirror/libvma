@@ -1,10 +1,10 @@
 Name:               libvma
-Version:            8.0.1
-Release:            6
+Version:            8.9.4
+Release:            7
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
-Source:             http://www.mellanox.com/downloads/Accelerator/%{name}-%{version}.tar.gz
+Source:             http://www.mellanox.com/downloads/Accelerator/%{version}.tar.gz
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -45,13 +45,16 @@ Headers files for libvma.
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS
+%doc README.md README.txt journal.txt VMA_VERSION.in
 %license COPYING LICENSE
 %config(noreplace) %{_sysconfdir}/libvma.conf
 %config(noreplace) %{_sysconfdir}/security/limits.d/30-libvma-limits.conf
 %{_bindir}/vma_stats
 %{_libdir}/%{name}.so
 %{_libdir}/%{name}*.so.*
+%{_sbindir}/vmad
+%{_sbindir}/vma
+%{_unitdir}/vma.service
 
 %files devel
 %defattr(-,root,root)
@@ -64,5 +67,11 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Sun Jan 19 2020 lijin Yang <yanglijin@huawei.com> - 8.9.4-7
+- Type: enhancement
+- ID: NA
+- SUG: NA
+- DESC: update the tar package
+
 * Tue Nov 26 2019 openEuler Buildteam <buildteam@openeuler.org> - 8.0.1-6
 - Package init
