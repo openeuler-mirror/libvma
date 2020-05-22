@@ -1,10 +1,11 @@
 Name:               libvma
 Version:            8.9.4
-Release:            7
+Release:            8
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
 Source:             http://www.mellanox.com/downloads/Accelerator/%{version}.tar.gz
+Patch0000:          Resolve-gcc-9.x-issues.patch
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -67,6 +68,9 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Thu May 21 2020 yanan li <liyanan032@huawei.com> - 8.9.4-8
+- Slove the problem of pointer value misalignment caused by gcc 9.x enabling verification.
+
 * Sun Jan 19 2020 lijin Yang <yanglijin@huawei.com> - 8.9.4-7
 - Type: enhancement
 - ID: NA

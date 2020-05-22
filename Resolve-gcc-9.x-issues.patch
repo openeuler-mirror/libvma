@@ -1,0 +1,216 @@
+From 1858b6fc989db967376a5a0c761623582b99080b Mon Sep 17 00:00:00 2001
+From: Igor Ivanov <igor.ivanov.va@gmail.com>
+Date: Fri, 11 Oct 2019 17:15:01 +0300
+Subject: [PATCH] issue: 1909532 Resolve gcc 9.x issues
+
+gcc 9.x enables [-Werror=address-of-packed-member] verification.
+So it produced taking address of packed member of <struct name>
+may result in an unaligned pointer value.
+
+Signed-off-by: Igor Ivanov <igor.ivanov.va@gmail.com>
+---
+ src/vma/dev/cq_mgr.inl          |  8 ++++----
+ src/vma/dev/rfs.h               | 22 +++++++++++-----------
+ src/vma/dev/ring_slave.cpp      | 10 +++++-----
+ src/vma/ib/base/verbs_extra.cpp |  4 ++--
+ src/vma/proto/header.h          |  4 ++--
+ src/vma/proto/igmp_handler.h    |  2 +-
+ 6 files changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/src/vma/dev/cq_mgr.inl b/src/vma/dev/cq_mgr.inl
+index 8739ff686..7b5564e89 100644
+--- a/src/vma/dev/cq_mgr.inl
++++ b/src/vma/dev/cq_mgr.inl
+@@ -72,17 +72,17 @@ inline uint32_t cq_mgr::process_recv_queue(void* pv_fd_ready_array)
+ inline bool is_eth_tcp_frame(mem_buf_desc_t* buff)
+ {
+ 	struct ethhdr* p_eth_h = (struct ethhdr*)(buff->p_buffer);
+-	uint16_t* p_h_proto = &p_eth_h->h_proto;
++	uint16_t h_proto = p_eth_h->h_proto;
+ 
+ 	size_t transport_header_len = ETH_HDR_LEN;
+ 	struct vlanhdr* p_vlan_hdr = NULL;
+-	if (*p_h_proto == htons(ETH_P_8021Q)) {
++	if (h_proto == htons(ETH_P_8021Q)) {
+ 		p_vlan_hdr = (struct vlanhdr*)((uint8_t*)p_eth_h + transport_header_len);
+ 		transport_header_len = ETH_VLAN_HDR_LEN;
+-		p_h_proto = &p_vlan_hdr->h_vlan_encapsulated_proto;
++		h_proto = p_vlan_hdr->h_vlan_encapsulated_proto;
+ 	}
+ 	struct iphdr *p_ip_h = (struct iphdr*)(buff->p_buffer + transport_header_len);
+-	if (likely(*p_h_proto == htons(ETH_P_IP)) && (p_ip_h->protocol == IPPROTO_TCP)) {
++	if (likely(h_proto == htons(ETH_P_IP)) && (p_ip_h->protocol == IPPROTO_TCP)) {
+ 		return true;
+ 	}
+ 	return false;
+diff --git a/src/vma/dev/rfs.h b/src/vma/dev/rfs.h
+index 30edec455..bd0a84c33 100644
+--- a/src/vma/dev/rfs.h
++++ b/src/vma/dev/rfs.h
+@@ -58,10 +58,10 @@ class pkt_rcvr_sink;
+ 
+ /* ETHERNET
+  */
+-typedef struct __attribute__ ((packed)) attach_flow_data_eth_ipv4_tcp_udp_t {
++typedef struct attach_flow_data_eth_ipv4_tcp_udp_t {
+ 	struct ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+-	struct __attribute__ ((packed)) ibv_flow_attr_eth_ipv4_tcp_udp {
++	struct ibv_flow_attr_eth_ipv4_tcp_udp {
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_eth         eth;
+ 		vma_ibv_flow_spec_ipv4        ipv4;
+@@ -89,10 +89,10 @@ typedef struct __attribute__ ((packed)) attach_flow_data_eth_ipv4_tcp_udp_t {
+ 
+ /* IPOIB (MC)
+  */
+-typedef struct __attribute__ ((packed)) attach_flow_data_ib_v2_t {
++typedef struct attach_flow_data_ib_v2_t {
+ 	struct ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+-	struct __attribute__ ((packed)) ibv_flow_attr_ib_v2 {
++	struct ibv_flow_attr_ib_v2 {
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_ipv4        ipv4;
+ 		vma_ibv_flow_spec_tcp_udp     tcp_udp;
+@@ -114,10 +114,10 @@ typedef struct __attribute__ ((packed)) attach_flow_data_ib_v2_t {
+ } attach_flow_data_ib_v2_t;
+ 
+ #ifdef DEFINED_IBV_FLOW_SPEC_IB
+-typedef struct __attribute__ ((packed)) attach_flow_data_ib_v1_t {
++typedef struct attach_flow_data_ib_v1_t {
+ 	struct ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+-	struct __attribute__ ((packed)) ibv_flow_attr_ib_v1 {
++	struct ibv_flow_attr_ib_v1 {
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_ib          ib;
+ 
+@@ -140,10 +140,10 @@ typedef struct __attribute__ ((packed)) attach_flow_data_ib_v1_t {
+ 
+ /* IPOIB (UC)
+  */
+-typedef struct __attribute__ ((packed)) attach_flow_data_ib_ipv4_tcp_udp_v2_t {
++typedef struct attach_flow_data_ib_ipv4_tcp_udp_v2_t {
+ 	struct ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+-	struct __attribute__ ((packed)) ibv_flow_attr_ib_ipv4_tcp_udp_v2 {
++	struct ibv_flow_attr_ib_ipv4_tcp_udp_v2 {
+ 
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_ipv4        ipv4;
+@@ -165,10 +165,10 @@ typedef struct __attribute__ ((packed)) attach_flow_data_ib_ipv4_tcp_udp_v2_t {
+ } attach_flow_data_ib_ipv4_tcp_udp_v2_t;
+ 
+ #ifdef DEFINED_IBV_FLOW_SPEC_IB
+-typedef struct __attribute__ ((packed)) attach_flow_data_ib_ipv4_tcp_udp_v1_t {
++typedef struct attach_flow_data_ib_ipv4_tcp_udp_v1_t {
+ 	struct ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+-	struct __attribute__ ((packed)) ibv_flow_attr_ib_ipv4_tcp_udp_v1 {
++	struct ibv_flow_attr_ib_ipv4_tcp_udp_v1 {
+ 
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_ib          ib;
+@@ -191,7 +191,7 @@ typedef struct __attribute__ ((packed)) attach_flow_data_ib_ipv4_tcp_udp_v1_t {
+ } attach_flow_data_ib_ipv4_tcp_udp_v1_t;
+ #endif /* DEFINED_IBV_FLOW_SPEC_IB */
+ 
+-typedef struct __attribute__ ((packed)) attach_flow_data_t {
++typedef struct attach_flow_data_t {
+ 	vma_ibv_flow *                       ibv_flow;
+ 	qp_mgr*                                 p_qp_mgr;
+ 	vma_ibv_flow_attr                    ibv_flow_attr;
+diff --git a/src/vma/dev/ring_slave.cpp b/src/vma/dev/ring_slave.cpp
+index 7d7f0375b..c691eafb1 100644
+--- a/src/vma/dev/ring_slave.cpp
++++ b/src/vma/dev/ring_slave.cpp
+@@ -630,20 +630,20 @@ bool ring_slave::rx_process_buffer(mem_buf_desc_t* p_rx_wc_buf_desc, void* pv_fd
+ //			printf("\n");
+ //		}
+ 
+-		uint16_t* p_h_proto = &p_eth_h->h_proto;
++		uint16_t h_proto = p_eth_h->h_proto;
+ 
+ 		ring_logfunc("Rx buffer Ethernet dst=" ETH_HW_ADDR_PRINT_FMT " <- src=" ETH_HW_ADDR_PRINT_FMT " type=%#x",
+ 				ETH_HW_ADDR_PRINT_ADDR(p_eth_h->h_dest),
+ 				ETH_HW_ADDR_PRINT_ADDR(p_eth_h->h_source),
+-				htons(*p_h_proto));
++				htons(h_proto));
+ 
+ 		// Handle VLAN header as next protocol
+ 		struct vlanhdr* p_vlan_hdr = NULL;
+ 		uint16_t packet_vlan = 0;
+-		if (*p_h_proto == htons(ETH_P_8021Q)) {
++		if (h_proto == htons(ETH_P_8021Q)) {
+ 			p_vlan_hdr = (struct vlanhdr*)((uint8_t*)p_eth_h + ETH_HDR_LEN);
+ 			transport_header_len = ETH_VLAN_HDR_LEN;
+-			p_h_proto = &p_vlan_hdr->h_vlan_encapsulated_proto;
++			h_proto = p_vlan_hdr->h_vlan_encapsulated_proto;
+ 			packet_vlan = (htons(p_vlan_hdr->h_vlan_TCI) & VLAN_VID_MASK);
+ 		} else {
+ 			transport_header_len = ETH_HDR_LEN;
+@@ -656,7 +656,7 @@ bool ring_slave::rx_process_buffer(mem_buf_desc_t* p_rx_wc_buf_desc, void* pv_fd
+ 		}
+ 
+ 		// Validate IP header as next protocol
+-		if (unlikely(*p_h_proto != htons(ETH_P_IP))) {
++		if (unlikely(h_proto != htons(ETH_P_IP))) {
+ 			ring_logwarn("Rx buffer dropped - Invalid Ethr Type (%#x : %#x)", p_eth_h->h_proto, htons(ETH_P_IP));
+ 			return false;
+ 		}
+diff --git a/src/vma/ib/base/verbs_extra.cpp b/src/vma/ib/base/verbs_extra.cpp
+index 8b7a062ca..5f9b34c90 100644
+--- a/src/vma/ib/base/verbs_extra.cpp
++++ b/src/vma/ib/base/verbs_extra.cpp
+@@ -299,7 +299,7 @@ int priv_ibv_query_flow_tag_supported(struct ibv_qp *qp, uint8_t port_num)
+ #ifdef DEFINED_IBV_FLOW_TAG
+ 
+ 	// Create
+-	struct __attribute__ ((packed)) {
++	struct {
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_eth         eth;
+ 		vma_ibv_flow_spec_ipv4        ipv4;
+@@ -342,7 +342,7 @@ int priv_ibv_create_flow_supported(struct ibv_qp *qp, uint8_t port_num)
+ {
+ 	int res = -1;
+ 
+-	struct __attribute__ ((packed)) {
++	struct {
+ 		vma_ibv_flow_attr             attr;
+ 		vma_ibv_flow_spec_ipv4        ipv4;
+ 		vma_ibv_flow_spec_tcp_udp     tcp_udp;
+diff --git a/src/vma/proto/header.h b/src/vma/proto/header.h
+index 9562ba920..e3cbb2162 100644
+--- a/src/vma/proto/header.h
++++ b/src/vma/proto/header.h
+@@ -75,13 +75,13 @@ struct __attribute__ ((packed)) vlan_eth_hdr_template_t  {	// Offeset  Size
+ //	iphdr		m_ip_hdr;				//   20      20  = 40
+ };
+ 
+-union __attribute__ ((packed)) l2_hdr_template_t  {
++union l2_hdr_template_t  {
+ 	ib_hdr_template_t	ib_hdr;
+ 	eth_hdr_template_t	eth_hdr;
+ 	vlan_eth_hdr_template_t	vlan_eth_hdr;
+ };
+ 
+-struct __attribute__ ((packed)) tx_hdr_template_t  {		// Offeset  Size
++struct __attribute__ ((packed, aligned)) tx_hdr_template_t  {		// Offeset  Size
+ 	l2_hdr_template_t	m_l2_hdr;			//    0      20
+ 	iphdr			m_ip_hdr;			//   20      20
+ 	union {
+diff --git a/src/vma/proto/igmp_handler.h b/src/vma/proto/igmp_handler.h
+index fbae0b58b..1dc24c622 100644
+--- a/src/vma/proto/igmp_handler.h
++++ b/src/vma/proto/igmp_handler.h
+@@ -44,7 +44,7 @@
+ 
+ #define IGMP_TIMER_ID	0
+ 
+-struct __attribute__ ((packed)) ip_igmp_tx_hdr_template_t {
++struct __attribute__ ((packed, aligned)) ip_igmp_tx_hdr_template_t {
+ 	iphdr			m_ip_hdr;
+ 	uint32_t		m_ip_hdr_ext;
+ 	igmphdr			m_igmp_hdr;
