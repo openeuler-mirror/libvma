@@ -1,10 +1,10 @@
 Name:               libvma
 Version:            8.9.4
-Release:            7
+Release:            8
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
-Source:             http://www.mellanox.com/downloads/Accelerator/%{version}.tar.gz
+Source:             https://github.com/Mellanox/libvma/archive/%{version}.tar.gz
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -67,6 +67,12 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Thu Sep 3 2020 zhaowei<zhaowei23@huawei.com> - 8.9.4-8
+- Type: enhancement
+- ID: NA
+- SUG: NA
+- DESC: update source URL
+
 * Sun Jan 19 2020 lijin Yang <yanglijin@huawei.com> - 8.9.4-7
 - Type: enhancement
 - ID: NA
