@@ -1,10 +1,11 @@
 Name:               libvma
 Version:            8.9.4
-Release:            8
+Release:            9
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
 Source:             https://github.com/Mellanox/libvma/archive/%{version}.tar.gz
+Patch0000:          0001-Remove-ExecReload-that-is-not-supported.patch
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -67,6 +68,9 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Wed Mar 10 2021 maminjie <maminjie1@huawei.com> - 8.9.4-9
+- Remove ExecReload that is not supported
+
 * Thu Sep 3 2020 zhaowei<zhaowei23@huawei.com> - 8.9.4-8
 - Type: enhancement
 - ID: NA
