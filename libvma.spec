@@ -1,6 +1,6 @@
 Name:               libvma
 Version:            8.9.4
-Release:            10
+Release:            11
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
@@ -11,7 +11,7 @@ ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
 Requires(postun):   /sbin/ldconfig
-BuildRequires:      rdma-core-devel libnl3-devel automake autoconf libtool
+BuildRequires:      rdma-core-devel libnl3-devel automake autoconf libtool g++
 Provides:           %{name}-utils = %{version}-%{release}
 Obsoletes:          %{name}-utils < %{version}-%{release}
 
@@ -69,6 +69,9 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Tue Jun 08 2021 wulei <wulei80@huawei.com> - 8.9.4-11
+- fixes failed: g++: No such file or directory
+
 * Wed Mar 10 2021 maminjie <maminjie1@huawei.com> - 8.9.4-10
 - Remove ExecReload that is not supported
 
