@@ -1,12 +1,14 @@
 Name:               libvma
 Version:            8.9.4
-Release:            11
+Release:            12
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
 Source:             https://github.com/Mellanox/libvma/archive/%{version}.tar.gz
 Patch0000:          Resolve-gcc-9.x-issues.patch
 Patch0001:          0001-Remove-ExecReload-that-is-not-supported.patch
+Patch0002:          fix-build-error-with-glibc-2.34.patch
+
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -69,6 +71,9 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Tue Aug 10 2021 wangyue <wangyue92@huawei.com> - 8.9.4-12
+- fix build error with glibc-2.34
+
 * Tue Jun 08 2021 wulei <wulei80@huawei.com> - 8.9.4-11
 - fixes failed: g++: No such file or directory
 

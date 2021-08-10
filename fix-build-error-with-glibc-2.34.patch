@@ -1,0 +1,27 @@
+From 8796b971e58bf7c224cae800209c5eaa53cf9841 Mon Sep 17 00:00:00 2001
+From: Igor Ivanov <igori@nvidia.com>
+Date: Thu, 17 Jun 2021 16:07:31 +0300
+Subject: [PATCH] issue: 2485156 Fix fc35 issues
+
+- glibc:
+  The function pthread_yield has been deprecated; programs should use
+  the equivalent standard function sched_yield instead.
+
+Signed-off-by: Igor Ivanov <igori@nvidia.com>
+---
+ src/vma/iomux/epfd_info.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/vma/iomux/epfd_info.cpp b/src/vma/iomux/epfd_info.cpp
+index c7670c7b3..d7c6c4fcd 100644
+--- a/src/vma/iomux/epfd_info.cpp
++++ b/src/vma/iomux/epfd_info.cpp
+@@ -624,7 +624,7 @@ int epfd_info::ring_poll_and_process_element(uint64_t *p_poll_sn, void* pv_fd_re
+ 
+ 	m_ring_map_lock.unlock();
+ 
+-	if (m_sysvar_thread_mode == THREAD_MODE_PLENTY && ret_total == 0 && errno == EAGAIN) pthread_yield();
++	if (m_sysvar_thread_mode == THREAD_MODE_PLENTY && ret_total == 0 && errno == EAGAIN) sched_yield();
+ 
+ 	if (ret_total) {
+ 		__log_func("ret_total=%d", ret_total);
