@@ -1,0 +1,131 @@
+diff -ur --new-file libvma-8.9.4/src/utils/asm.h libvma-8.9.4/src/utils/asm.h
+--- libvma-8.9.4/src/utils/asm.h	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/src/utils/asm.h	2023-07-04 18:20:00.945024098 +0800
+@@ -40,6 +40,8 @@
+ #include "asm-ppc64.h"
+ #elif defined(__x86_64__)
+ #include "asm-x86.h"
++#elif defined(__riscv)
++#include "asm-riscv64.h"
+ #else
+ #error No architecture specific memory barrier definitions found!
+ #endif
+diff -ur --new-file libvma-8.9.4/src/utils/asm-riscv64.h libvma-8.9.4/src/utils/asm-riscv64.h
+--- libvma-8.9.4/src/utils/asm-riscv64.h	1970-01-01 08:00:00.000000000 +0800
++++ libvma-8.9.4/src/utils/asm-riscv64.h	2023-07-04 19:04:43.008885262 +0800
+@@ -0,0 +1,103 @@
++/*
++ * Copyright (c) 2001-2019 Mellanox Technologies, Ltd. All rights reserved.
++ *
++ * This software is available to you under a choice of one of two
++ * licenses.  You may choose to be licensed under the terms of the GNU
++ * General Public License (GPL) Version 2, available from the file
++ * COPYING in the main directory of this source tree, or the
++ * BSD license below:
++ *
++ *     Redistribution and use in source and binary forms, with or
++ *     without modification, are permitted provided that the following
++ *     conditions are met:
++ *
++ *      - Redistributions of source code must retain the above
++ *        copyright notice, this list of conditions and the following
++ *        disclaimer.
++ *
++ *      - Redistributions in binary form must reproduce the above
++ *        copyright notice, this list of conditions and the following
++ *        disclaimer in the documentation and/or other materials
++ *        provided with the distribution.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
++ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
++ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
++ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ * SOFTWARE.
++ */
++
++
++#ifndef ASMRISCV64_H_
++#define ASMRISCV64_H_
++
++#include <stdint.h>
++#include <unistd.h>
++#include <string.h>
++#define COPY_64B_NT(dst, src)	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++;	\
++	*dst++ = *src++
++#define RISCV_FENCE(p, s) \
++	__asm__ __volatile__ ("fence " #p "," #s : : : "memory")
++
++#define mb()	RISCV_FENCE(iorw,iorw)
++#define rmb()	RISCV_FENCE(ir,ir)
++#define wmb()	RISCV_FENCE(ow,ow)
++#define wc_wmb() wmb()
++
++#define wc_wmb() wmb()
++
++/**
++ * Add to the atomic variable.
++ * @param i integer value to add.
++ * @param v pointer of type atomic_t.
++ * @return Value before add.
++ */
++static inline int atomic_fetch_and_add(int i, volatile int *ptr)
++{
++	return __atomic_fetch_add(ptr, i, __ATOMIC_ACQUIRE);
++}
++
++/**
++ * Read RDTSC register
++ */
++static inline void gettimeoftsc(unsigned long long *p_tscval)
++{
++	// Read Time Stamp Counter
++   asm volatile ("rdcycle %0" : "=r" (*p_tscval));
++}
++
++/**
++ * Cache Line Prefetch - Arch specific!
++ */
++#ifndef L1_CACHE_BYTES
++#define L1_CACHE_BYTES		64
++#endif
++
++static inline void prefetch(void *x)
++{
++	//__builtin_prefetch();
++	char temp_prefetch_block[L1_CACHE_BYTES];
++	memcpy(temp_prefetch_block, x, L1_CACHE_BYTES);
++}
++
++static inline void prefetch_range(void *addr, size_t len)
++{
++	char *cp = (char*)addr;
++	char *end = (char*)addr + len;
++	for (; cp < end; cp += L1_CACHE_BYTES)
++		prefetch(cp);
++}
++
++
++
++#endif
+diff -ur --new-file libvma-8.9.4/src/utils/Makefile.am libvma-8.9.4/src/utils/Makefile.am
+--- libvma-8.9.4/src/utils/Makefile.am	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/src/utils/Makefile.am	2023-07-04 18:22:38.837315742 +0800
+@@ -7,6 +7,7 @@
+ 	asm-arm64.h \
+ 	asm-ppc64.h \
+ 	asm-x86.h \
++	asm-riscv64.h \
+ 	asm.h \
+ 	atomic.h \
+ 	bullseye.h \
+ 

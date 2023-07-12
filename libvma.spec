@@ -1,6 +1,6 @@
 Name:               libvma
 Version:            8.9.4
-Release:            12
+Release:            13
 Summary:            A library that boosts performance for message-based and streaming applications
 License:            GPLv2 or BSD
 URL:                https://github.com/Mellanox/libvma
@@ -8,7 +8,9 @@ Source:             https://github.com/Mellanox/libvma/archive/%{version}.tar.gz
 Patch0000:          Resolve-gcc-9.x-issues.patch
 Patch0001:          0001-Remove-ExecReload-that-is-not-supported.patch
 Patch0002:          fix-build-error-with-glibc-2.34.patch
-
+Patch0003:          fix-clang.patch
+Patch0004:          fix-arm.patch
+Patch0005:          add-riscv64-support.patch
 ExcludeArch:        %{arm}
 Requires:           pam
 Requires(post):     /sbin/ldconfig
@@ -37,6 +39,20 @@ Headers files for libvma.
 %autosetup -n %{name}-%{version} -p1
 
 %build
+%if "%toolchain"=="clang"
+%ifarch x86_64
+export CXXFLAGS+="$CXXFLAGS -Werror  -Wno-deprecated-register -Wno-non-c-typedef-for-linkage -Wno-unused-but-set-variable -Wno-gnu-variable-sized-type-not-at-end"
+export CFLAGS+="$CFLAGS -Werror  -Wno-deprecated-register -Wno-non-c-typedef-for-linkage -Wno-unused-but-set-variable -Wno-gnu-variable-sized-type-not-at-end"
+%endif
+%ifarch aarch64
+export CXXFLAGS+="$CXXFLAGS -Wall -Wno-error -Wno-invalid-pp-token -Wno-deprecated-register -Wno-gnu-variable-sized-type-not-at-end"
+export CFLAGS+="$CFLAGS  -Wno-invalid-pp-token -Wno-deprecated-register -Wno-gnu-variable-sized-type-not-at-end"
+%endif
+%ifarch riscv64
+export CXXFLAGS+="$CXXFLAGS -Werror -Wnon-c-typedef-for-linkage -Wno-deprecated-register -Wno-gnu-variable-sized-type-not-at-end"
+export CFLAGS+="$CFLAGS  -Werror -Wnon-c-typedef-for-linkage -Wno-deprecated-register -Wno-gnu-variable-sized-type-not-at-end"
+%endif
+%endif
 ./autogen.sh
 %configure
 %make_build V=1
@@ -71,6 +87,9 @@ Headers files for libvma.
 %{_pkgdocdir}/VMA_VERSION
 
 %changelog
+* Fri Jul 7 2023 zhangxiang <zhangxiang@iscas.ac.cn> - 8.9.4-13
+- fix clang build error & add riscv64 support
+
 * Tue Aug 10 2021 wangyue <wangyue92@huawei.com> - 8.9.4-12
 - fix build error with glibc-2.34
 

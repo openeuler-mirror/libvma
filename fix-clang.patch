@@ -1,0 +1,135 @@
+diff -ur libvma-8.9.4/configure.ac libvma-8.9.4/configure.ac
+--- libvma-8.9.4/configure.ac	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/configure.ac	2023-07-05 08:21:25.060573648 +0800
+@@ -156,7 +156,7 @@
+     clang*|clang++*)
+         AC_MSG_RESULT([clang])
+         CFLAGS="$CFLAGS -Wall -Werror -Wno-format-security -Wno-self-assign"
+-        CXXFLAGS="$CXXFLAGS -Wall -Werror -Wno-overloaded-virtual"
++        CXXFLAGS="$CXXFLAGS -Wall -Werror -Wno-overloaded-virtual -Wno-unused-but-set-variable"
+         ;;
+     *)
+         AC_MSG_RESULT([unknown])
+diff -ur libvma-8.9.4/src/vlogger/vlogger.h libvma-8.9.4/src/vlogger/vlogger.h
+--- libvma-8.9.4/src/vlogger/vlogger.h	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/src/vlogger/vlogger.h	2023-07-05 08:21:20.512564036 +0800
+@@ -258,9 +258,9 @@
+ 
+ #define vlog_func_all_enter()   vlog_printf(VLOG_FINER,"ENTER %s\n", __PRETTY_FUNCTION__);
+ #define vlog_func_all_exit()    vlog_printf(VLOG_FINER,"EXIT %s\n",__PRETTY_FUNCTION__);
+-
++#ifndef __clang__ 
+ pid_t gettid(void); // Check vlogger.cpp for implementation
+-
++#endif
+ void printf_backtrace(void);
+ 
+ void vlog_start(const char* log_module_name, vlog_levels_t log_level = VLOG_DEFAULT, const char* log_filename = NULL, int log_details = 0, bool colored_log = true);
+diff -ur libvma-8.9.4/src/vma/sock/sock-redirect.cpp libvma-8.9.4/src/vma/sock/sock-redirect.cpp
+--- libvma-8.9.4/src/vma/sock/sock-redirect.cpp	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/src/vma/sock/sock-redirect.cpp	2023-07-05 08:34:00.122282376 +0800
+@@ -1303,7 +1303,7 @@
+ 
+    This function is a cancellation point and therefore not marked with
+    __THROW.  */
+-extern "C"
++/*extern "C"
+ ssize_t read(int __fd, void *__buf, size_t __nbytes)
+ {
+ 	srdr_logfuncall_entry("fd=%d", __fd);
+@@ -1323,7 +1323,7 @@
+ 	BULLSEYE_EXCLUDE_BLOCK_END
+ 
+ 	return orig_os_api.read(__fd, __buf, __nbytes);
+-}
++}*/
+ 
+ /* Checks that the buffer is big enough to contain the number of bytes
+  * the user requests to read. If the buffer is too small, aborts,
+@@ -1389,7 +1389,7 @@
+ 
+    This function is a cancellation point and therefore not marked with
+    __THROW.  */
+-extern "C"
++/*extern "C"
+ ssize_t recv(int __fd, void *__buf, size_t __nbytes, int __flags)
+ {
+ 	srdr_logfuncall_entry("fd=%d", __fd);
+@@ -1407,7 +1407,7 @@
+ 	BULLSEYE_EXCLUDE_BLOCK_END
+ 
+ 	return orig_os_api.recv(__fd, __buf, __nbytes, __flags);
+-}
++}*/
+ 
+ /* Checks that the buffer is big enough to contain the number of bytes
+    the user requests to read. If the buffer is too small, aborts,
+@@ -1558,7 +1558,7 @@
+ 
+    This function is a cancellation point and therefore not marked with
+    __THROW.  */
+-extern "C"
++/*extern "C"
+ ssize_t recvfrom(int __fd, void *__buf, size_t __nbytes, int __flags,
+ 		 struct sockaddr *__from, socklen_t *__fromlen)
+ {
+@@ -1596,7 +1596,7 @@
+ 	RDTSC_TAKE_START(g_rdtsc_instr_info_arr[RDTSC_FLOW_RECEIVEFROM_TO_SENDTO]);
+ #endif //RDTSC_MEASURE_RECEIVEFROM_TO_SENDTO
+ 	return ret_val;
+-}
++}*/
+ 
+ /* Checks that the buffer is big enough to contain the number of bytes
+    the user requests to read. If the buffer is too small, aborts,
+@@ -2074,7 +2074,7 @@
+ 	}
+ }
+ 
+-extern "C"
++/*extern "C"
+ int poll(struct pollfd *__fds, nfds_t __nfds, int __timeout)
+ {
+ 	if (!g_p_fd_collection) {
+@@ -2087,9 +2087,9 @@
+ 	srdr_logfunc_entry("nfds=%d, timeout=(%d milli-sec)", __nfds, __timeout);
+ 
+ 	return poll_helper(__fds, __nfds, __timeout);
+-}
++}*/
+ 
+-extern "C"
++/*extern "C"
+ int ppoll(struct pollfd *__fds, nfds_t __nfds, const struct timespec *__timeout, const sigset_t *__sigmask)
+ {
+ 	if (!g_p_fd_collection) {
+@@ -2105,7 +2105,7 @@
+ 	srdr_logfunc_entry("nfds=%d, timeout=(%d milli-sec)", __nfds, timeout);
+ 
+ 	return poll_helper(__fds, __nfds, timeout, __sigmask);
+-}
++}*/
+ 
+ void vma_epoll_create(int epfd, int size)
+ {
+diff -ur libvma-8.9.4/src/vma/util/vma_stats.h libvma-8.9.4/src/vma/util/vma_stats.h
+--- libvma-8.9.4/src/vma/util/vma_stats.h	2019-09-23 15:59:44.000000000 +0800
++++ libvma-8.9.4/src/vma/util/vma_stats.h	2023-07-05 08:25:11.757072845 +0800
+@@ -165,7 +165,7 @@
+ 	uint32_t    n_tx_dummy;
+ } socket_counters_t;
+ 
+-typedef struct {
++typedef struct socket_stats_t{
+ 	int         fd;
+ 	uint32_t                     inode;
+ 	uint32_t                     tcp_state;   // enum tcp_state
+@@ -210,7 +210,7 @@
+ 	};
+ } socket_stats_t;
+ 
+-typedef struct {
++typedef struct socket_instance_block_t{
+ 	bool            b_enabled;
+ 	socket_stats_t  skt_stats;
+ 
